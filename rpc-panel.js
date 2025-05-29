@@ -1,13 +1,15 @@
 const RPC = require('discord-rpc');
 const readline = require('readline');
+const fs = require('fs');
+const path = require('path');
 
-// 🔧 Mets ici ton Client ID
 const clientId = '1376264086492413972';
-
 RPC.register(clientId);
 const rpc = new RPC.Client({ transport: 'ipc' });
 
-// Configuration Rich Presence par défaut
+const CONFIG_PATH = path.join(__dirname, 'config.json');
+
+// Charger la configuration sauvegardée
 let currentActivity = {
   details: '',
   state: '',
@@ -19,11 +21,23 @@ let currentActivity = {
   instance: false,
 };
 
-// Interface CLI
+if (fs.existsSync(CONFIG_PATH)) {
+  try {
+    const saved = JSON.parse(fs.readFileSync(CONFIG_PATH));
+    currentActivity = { ...currentActivity, ...saved };
+  } catch (e) {
+    console.error('Erreur en lisant config.json :', e);
+  }
+}
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+
+function saveConfig() {
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(currentActivity, null, 2));
+}
 
 function displayPanel() {
   console.clear();
@@ -49,41 +63,48 @@ function handleMenu(choice) {
     case '1':
       rl.question('✏️ Nouveau "details" : ', (val) => {
         currentActivity.details = val;
+        saveConfig();
         displayPanel();
       });
       break;
     case '2':
       rl.question('🧾 Nouveau "state" : ', (val) => {
         currentActivity.state = val;
+        saveConfig();
         displayPanel();
       });
       break;
     case '3':
       rl.question('🖼️ Nouveau "largeImageKey" : ', (val) => {
         currentActivity.largeImageKey = val;
+        saveConfig();
         displayPanel();
       });
       break;
     case '4':
       rl.question('🖼️ Nouveau "largeImageText" : ', (val) => {
         currentActivity.largeImageText = val;
+        saveConfig();
         displayPanel();
       });
       break;
     case '5':
       rl.question('🔹 Nouveau "smallImageKey" : ', (val) => {
         currentActivity.smallImageKey = val;
+        saveConfig();
         displayPanel();
       });
       break;
     case '6':
       rl.question('🔹 Nouveau "smallImageText" : ', (val) => {
         currentActivity.smallImageText = val;
+        saveConfig();
         displayPanel();
       });
       break;
     case '7':
       currentActivity.startTimestamp = currentActivity.startTimestamp ? null : new Date();
+      saveConfig();
       console.log(`⏱️ Timestamp ${currentActivity.startTimestamp ? 'activé' : 'désactivé'}.`);
       setTimeout(displayPanel, 700);
       break;
@@ -124,6 +145,7 @@ function handleMenu(choice) {
 }
 
 rpc.on('ready', () => {
+  console.log('🔌 Connecté à Discord RPC !');
   displayPanel();
 });
 
